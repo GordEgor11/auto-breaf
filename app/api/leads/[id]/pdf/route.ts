@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
@@ -123,9 +125,18 @@ export async function GET(
     return new Response(message, { status: 404 });
   }
 
+  const brotliPath = [
+    process.env.CHROMIUM_BROTLI_PATH,
+    path.join(process.cwd(), "node_modules/@sparticuz/chromium/bin"),
+    path.join(
+      process.cwd(),
+      ".next/standalone/node_modules/@sparticuz/chromium/bin"
+    ),
+  ].find((candidate) => candidate && existsSync(candidate));
+
   const browser = await puppeteer.launch({
     args: chromium.args,
-    executablePath: await chromium.executablePath(),
+    executablePath: await chromium.executablePath(brotliPath),
   });
   const page = await browser.newPage();
   await page.setContent(buildHtml(lead), { waitUntil: "load" });
