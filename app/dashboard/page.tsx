@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import LeadActions from "./LeadActions";
 
 export const dynamic = "force-dynamic";
 
@@ -251,12 +252,13 @@ export default async function DashboardPage({
         </form>
 
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 px-6 py-4 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 px-6 py-4 text-xs font-semibold uppercase tracking-wide text-zinc-500">
             <div>Клиент</div>
             <div>Объект</div>
             <div>Бюджет</div>
             <div>Сроки</div>
             <div>Статус</div>
+            <div>Дата</div>
           </div>
 
           {error ? (
@@ -268,7 +270,7 @@ export default async function DashboardPage({
               {leads.map((lead) => (
                 <li
                   key={lead.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 text-sm"
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 text-sm"
                 >
                   <div>
                     <div className="font-semibold">{lead.name}</div>
@@ -331,6 +333,12 @@ export default async function DashboardPage({
                     >
                       PDF-бриф
                     </a>
+                    <LeadActions phone={lead.phone} />
+                  </div>
+                  <div className="text-xs text-zinc-500">
+                    {lead.created_at
+                      ? new Date(lead.created_at).toLocaleDateString("ru-RU")
+                      : "—"}
                   </div>
                 </li>
               ))}
