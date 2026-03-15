@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { chromium } from "playwright";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -122,8 +123,11 @@ export async function GET(
     return new Response(message, { status: 404 });
   }
 
-  const browser = await chromium.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
   const page = await browser.newPage();
   await page.setContent(buildHtml(lead), { waitUntil: "load" });
