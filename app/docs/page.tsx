@@ -48,6 +48,14 @@ export default function DocsPage() {
           </div>
         </section>
 
+        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold">4. Где смотреть конверсию формы</h2>
+          <p className="mt-3 text-sm text-zinc-600">
+            В кабинете агента есть карточка "Конверсия формы". Она показывает
+            долю успешных отправок от попыток (form_success / form_submit).
+          </p>
+        </section>
+
         <a
           className="text-sm font-semibold text-zinc-900 underline underline-offset-4"
           href="/"

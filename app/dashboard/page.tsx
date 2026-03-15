@@ -126,6 +126,35 @@ export default async function DashboardPage({
     .select("status, created_at")
     .eq("agent_id", agentId);
 
+  let conversionSubmit = 0;
+  let conversionSuccess = 0;
+  let conversionRate: number | null = null;
+
+  try {
+    let eventsQuery = supabase
+      .from("lead_events")
+      .select("event_type, created_at")
+      .eq("agent_id", agentId)
+      .in("event_type", ["form_submit", "form_success"]);
+
+    if (period) {
+      const since = new Date();
+      since.setDate(since.getDate() - period);
+      eventsQuery = eventsQuery.gte("created_at", since.toISOString());
+    }
+
+    const { data: events } = await eventsQuery;
+    for (const event of events ?? []) {
+      if (event.event_type === "form_submit") conversionSubmit += 1;
+      if (event.event_type === "form_success") conversionSuccess += 1;
+    }
+    if (conversionSubmit > 0) {
+      conversionRate = Math.round((conversionSuccess / conversionSubmit) * 100);
+    }
+  } catch {
+    conversionRate = null;
+  }
+
   const summary = (allLeads ?? []).reduce(
     (acc, lead) => {
       acc.total += 1;
@@ -149,7 +178,7 @@ export default async function DashboardPage({
           </p>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-5">
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-zinc-400">Всего</div>
             <div className="mt-2 text-2xl font-semibold">{summary.total}</div>
@@ -170,6 +199,19 @@ export default async function DashboardPage({
             <div className="text-xs uppercase tracking-wide text-zinc-400">Закрытые</div>
             <div className="mt-2 text-2xl font-semibold text-zinc-600">
               {summary.closed}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="text-xs uppercase tracking-wide text-zinc-400">
+              Конверсия формы
+            </div>
+            <div className="mt-2 text-2xl font-semibold text-zinc-800">
+              {conversionRate !== null ? `${conversionRate}%` : "—"}
+            </div>
+            <div className="mt-1 text-[11px] text-zinc-500">
+              {conversionRate !== null
+                ? `${conversionSuccess} / ${conversionSubmit}`
+                : "нет данных"}
             </div>
           </div>
         </section>

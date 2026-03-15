@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type LeadFormState = {
   property_type: "apartment" | "house";
@@ -33,6 +33,7 @@ export default function BriefPage() {
   );
   const [message, setMessage] = useState<string | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const hasTrackedView = useRef(false);
 
   function updateField<K extends keyof LeadFormState>(
     key: K,
@@ -96,6 +97,16 @@ export default function BriefPage() {
     localStorage.setItem("brief_draft_v1", JSON.stringify(form));
   }, [form]);
 
+  useEffect(() => {
+    if (hasTrackedView.current) return;
+    hasTrackedView.current = true;
+    void fetch("/api/lead-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_type: "form_view" }),
+    });
+  }, []);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("loading");
@@ -103,6 +114,12 @@ export default function BriefPage() {
     setLeadId(null);
 
     try {
+      void fetch("/api/lead-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "form_submit" }),
+      });
+
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,6 +140,11 @@ export default function BriefPage() {
       setMessage("Заявка отправлена. Мы скоро свяжемся с вами.");
       setForm(initialState);
       localStorage.removeItem("brief_draft_v1");
+      void fetch("/api/lead-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "form_success" }),
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Что-то пошло не так.";

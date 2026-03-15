@@ -22,6 +22,19 @@ create table if not exists public.leads (
 create index if not exists leads_agent_id_idx on public.leads (agent_id);
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
 
+-- Lead events for simple analytics
+create table if not exists public.lead_events (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  agent_id uuid not null,
+  event_type text not null,
+  source text,
+  constraint lead_events_type_check check (event_type in ('form_view', 'form_submit', 'form_success'))
+);
+
+create index if not exists lead_events_agent_id_idx on public.lead_events (agent_id);
+create index if not exists lead_events_created_at_idx on public.lead_events (created_at desc);
+
 -- Optional notes for a lead
 create table if not exists public.lead_notes (
   id uuid primary key default gen_random_uuid(),
@@ -35,6 +48,7 @@ create index if not exists lead_notes_lead_id_idx on public.lead_notes (lead_id)
 -- Row level security
 alter table public.leads enable row level security;
 alter table public.lead_notes enable row level security;
+alter table public.lead_events enable row level security;
 
 -- Leads policies: owner-only read/update/delete
 create policy "leads_select_own"
@@ -111,3 +125,22 @@ create policy "lead_notes_delete_own"
         and leads.agent_id = auth.uid()
     )
   );
+
+-- Lead events policies: owner-only access
+create policy "lead_events_select_own"
+  on public.lead_events
+  for select
+  to authenticated
+  using (agent_id = auth.uid());
+
+create policy "lead_events_insert_own"
+  on public.lead_events
+  for insert
+  to authenticated
+  with check (agent_id = auth.uid());
+
+create policy "lead_events_delete_own"
+  on public.lead_events
+  for delete
+  to authenticated
+  using (agent_id = auth.uid());
