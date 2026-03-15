@@ -122,7 +122,9 @@ export async function GET(
     return new Response(message, { status: 404 });
   }
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const page = await browser.newPage();
   await page.setContent(buildHtml(lead), { waitUntil: "load" });
   const pdf = await page.pdf({ format: "A4", printBackground: true });
