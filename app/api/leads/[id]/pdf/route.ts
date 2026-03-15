@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { chromium } from "playwright";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -76,12 +77,13 @@ function buildHtml(lead: any) {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const pathname = new URL(request.url).pathname;
   const fallbackId = pathname.split("/").slice(-2, -1)[0];
-  const leadId = params?.id ?? fallbackId;
+  const leadId = id ?? fallbackId;
 
   if (!leadId) {
     return new Response("ID заявки не указан", { status: 400 });
