@@ -126,7 +126,6 @@ export async function GET(
   const browser = await puppeteer.launch({
     args: chromium.args,
     executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
   });
   const page = await browser.newPage();
   await page.setContent(buildHtml(lead), { waitUntil: "load" });
