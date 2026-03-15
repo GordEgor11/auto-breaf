@@ -149,7 +149,7 @@ export default function BriefPage() {
       const errorMessage =
         error instanceof Error ? error.message : "Что-то пошло не так.";
       setStatus("error");
-      setMessage(errorMessage);
+      setMessage(errorMessage || "Что-то пошло не так. Проверьте данные.");
     }
   }
 
@@ -159,7 +159,7 @@ export default function BriefPage() {
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold">Бриф заявки</h1>
           <p className="text-sm text-zinc-600">
-            Заполните короткую форму, и агент получит уведомление.
+            Заполните короткую форму, и агент получит уведомление в течение минуты.
           </p>
         </header>
 
@@ -194,7 +194,8 @@ export default function BriefPage() {
             className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
           >
             <p className="text-xs text-zinc-500">
-              Поля с * обязательны. Остальные можно оставить пустыми.
+              Поля с * обязательны. Остальные можно оставить пустыми. Мы используем
+              данные только для связи по заявке.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="flex flex-col gap-2 text-sm font-medium">

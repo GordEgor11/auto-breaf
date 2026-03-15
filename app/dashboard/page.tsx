@@ -387,7 +387,8 @@ export default async function DashboardPage({
             </ul>
           ) : (
             <div className="px-6 py-8 text-sm text-zinc-500">
-              Заявок пока нет.
+              Заявок пока нет. Поделитесь ссылкой на бриф, чтобы получить первые
+              заявки: <span className="font-mono">/brief</span>
             </div>
           )}
         </section>

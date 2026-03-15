@@ -56,6 +56,17 @@ export default function DocsPage() {
           </p>
         </section>
 
+        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold">5. Чеклист внедрения за 30 минут</h2>
+          <ol className="mt-4 space-y-3 text-sm text-zinc-600">
+            <li>1. Подключи Telegram по инструкции выше.</li>
+            <li>2. Размести ссылку на бриф в Instagram/Avito/на сайте.</li>
+            <li>3. Проверь, что заявка приходит в кабинет агента.</li>
+            <li>4. Скачай PDF‑бриф и убедись, что он открывается.</li>
+            <li>5. Обнови статус заявки и посмотри статистику.</li>
+          </ol>
+        </section>
+
         <a
           className="text-sm font-semibold text-zinc-900 underline underline-offset-4"
           href="/"
