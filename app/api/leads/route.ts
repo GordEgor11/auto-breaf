@@ -3,6 +3,15 @@ import { z } from "zod";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
+function normalizePhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return value;
+  if (digits.startsWith("7")) return `+${digits}`;
+  if (digits.startsWith("8")) return `+7${digits.slice(1)}`;
+  if (digits.length === 10) return `+7${digits}`;
+  return `+${digits}`;
+}
+
 async function sendTelegramNotification(message: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -102,7 +111,7 @@ export async function POST(request: NextRequest) {
       timeline: parsed.data.timeline || null,
       mortgage: parsed.data.mortgage,
       name: parsed.data.name,
-      phone: parsed.data.phone,
+      phone: normalizePhone(parsed.data.phone),
       email: parsed.data.email || null,
     };
 
