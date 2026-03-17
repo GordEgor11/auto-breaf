@@ -1,5 +1,13 @@
+-- ============================================
+-- Decor CRM Database Schema
+-- ============================================
+
 -- Enable required extensions
 create extension if not exists pgcrypto;
+
+-- ============================================
+-- TABLES
+-- ============================================
 
 -- Profiles table (linked to auth.users)
 create table if not exists public.profiles (
@@ -13,25 +21,6 @@ create table if not exists public.profiles (
 );
 
 create index if not exists profiles_email_idx on public.profiles (email);
-
--- Auto-create profile on user signup
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, email, name, updated_at)
-  values (new.id, new.email, new.raw_user_meta_data->>'name', now());
-  return new;
-end;
-$$;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row
-  execute function public.handle_new_user();
 
 -- Leads table
 create table if not exists public.leads (
@@ -77,12 +66,64 @@ create table if not exists public.lead_notes (
 
 create index if not exists lead_notes_lead_id_idx on public.lead_notes (lead_id);
 
--- Row level security
+-- ============================================
+-- TRIGGER FOR AUTO-CREATE PROFILE
+-- ============================================
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, name, updated_at)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function public.handle_new_user();
+
+-- ============================================
+-- ROW LEVEL SECURITY
+-- ============================================
+
 alter table public.profiles enable row level security;
 alter table public.leads enable row level security;
 alter table public.lead_notes enable row level security;
 alter table public.lead_events enable row level security;
 
+-- Drop existing policies if they exist
+do $$ begin
+  -- Profiles policies
+  drop policy if exists "profiles_select_own" on public.profiles;
+  drop policy if exists "profiles_update_own" on public.profiles;
+  drop policy if exists "profiles_insert_own" on public.profiles;
+  
+  -- Leads policies
+  drop policy if exists "leads_select_own" on public.leads;
+  drop policy if exists "leads_insert_own" on public.leads;
+  drop policy if exists "leads_update_own" on public.leads;
+  drop policy if exists "leads_delete_own" on public.leads;
+  
+  -- Lead notes policies
+  drop policy if exists "lead_notes_select_own" on public.lead_notes;
+  drop policy if exists "lead_notes_insert_own" on public.lead_notes;
+  drop policy if exists "lead_notes_update_own" on public.lead_notes;
+  drop policy if exists "lead_notes_delete_own" on public.lead_notes;
+  
+  -- Lead events policies
+  drop policy if exists "lead_events_select_own" on public.lead_events;
+  drop policy if exists "lead_events_insert_own" on public.lead_events;
+  drop policy if exists "lead_events_update_own" on public.lead_events;
+  drop policy if exists "lead_events_delete_own" on public.lead_events;
+end $$;
+
+-- Create new policies
 -- Profiles policies: users can only view/update their own profile
 create policy "profiles_select_own"
   on public.profiles
