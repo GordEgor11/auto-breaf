@@ -18,47 +18,43 @@ export default function LoginPage() {
     setStatus("loading");
     setError(null);
 
-    console.log("Attempting sign in with:", form.email);
+    console.log("=== LOGIN ATTEMPT ===");
+    console.log("Email:", form.email);
 
     try {
       const supabase = createSupabaseBrowserClient();
+      
       const { error: signInError, data } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
       });
 
-      console.log("Sign in result:", { data, error: signInError });
+      console.log("=== SIGN IN RESULT ===");
+      console.log("User:", data?.user?.email || "none");
+      console.log("Session:", data?.session ? "exists" : "none");
+      console.log("Error:", signInError?.message || "none");
+      console.log("Cookies after sign in:", document.cookie.substring(0, 100));
 
-      if (signInError) {
-        console.error("Sign in error:", signInError.message, signInError.status);
+      if (signInError || !data.user || !data.session) {
+        console.error("Login failed:", signInError?.message || "No user/session");
         setStatus("error");
-        setError(signInError.message);
+        setError(signInError?.message || "Ошибка входа: нет сессии");
         return;
       }
 
-      if (!data.user || !data.session) {
-        console.error("No user or session returned");
-        setStatus("error");
-        setError("Ошибка входа: нет сессии");
-        return;
-      }
-
-      console.log("Sign in successful, user:", data.user.email);
       console.log("Redirecting to dashboard...");
       
-      // Даем время на сохранение cookies
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Проверка через 100мс
+      setTimeout(() => {
+        console.log("Cookies before redirect:", document.cookie.substring(0, 100));
+      }, 100);
       
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
       console.error("Login error:", err);
       setStatus("error");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Не удалось войти. Проверьте email и пароль"
-      );
+      setError(err instanceof Error ? err.message : "Не удалось войти");
     }
   }
 
