@@ -1,38 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# decor_crm — CRM для агентств недвижимости
 
-## Getting Started
+Система управления заявками на просмотр недвижимости с автоматической генерацией PDF-брифов.
 
-First, run the development server:
+## Возможности
+
+- 📝 **Публичная форма** — клиенты оставляют заявки на просмотр
+- 🔔 **Уведомления** — Telegram + email fallback
+- 📄 **PDF-брифы** — генерация документов по запросу
+- 👤 **Аутентификация** — регистрация и вход для агентов
+- 🔒 **Изоляция данных** — каждый агент видит только свои заявки
+- 📊 **Dashboard** — управление заявками, фильтры, экспорт CSV
+
+## Быстрый старт
+
+### 1. Клонирование и установка
+
+```bash
+npm install
+```
+
+### 2. Настройка Supabase
+
+1. Создайте проект на [supabase.com](https://supabase.com)
+2. Выполните SQL-скрипт из `supabase/schema.sql` в SQL Editor
+3. Получите ключи API в Settings → API
+
+### 3. Настройка переменных окружения
+
+Создайте `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=ваш_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=ваш_anon_key
+SUPABASE_SERVICE_ROLE_KEY=ваш_service_role_key
+
+# Telegram (опционально)
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+### 4. Запуск
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Структура приложения
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Страница | Описание |
+|----------|----------|
+| `/` | Лендинг с информацией |
+| `/register` | Регистрация нового агента |
+| `/login` | Вход в систему |
+| `/brief` | Форма подачи заявки (требует входа) |
+| `/dashboard` | Кабинет агента с заявками |
+| `/pricing` | Тарифы |
+| `/docs` | Документация |
 
-## Learn More
+## API Endpoints
 
-To learn more about Next.js, take a look at the following resources:
+- `POST /api/leads` — создание заявки
+- `GET /api/leads/export` — экспорт в CSV
+- `GET /api/leads/[id]/pdf` — генерация PDF
+- `POST /api/lead-events` — отслеживание событий формы
+- `POST /api/auth/logout` — выход из системы
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## База данных
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Таблицы
 
-## Deploy on Vercel
+- **profiles** — профили агентов (связаны с auth.users)
+- **leads** — заявки клиентов
+- **lead_events** — аналитика (просмотры, отправки форм)
+- **lead_notes** — заметки к заявкам
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Безопасность
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Все таблицы защищены Row Level Security (RLS):
+- Агенты видят только свои данные
+- Автоматическое создание профиля при регистрации
+- Каскадное удаление при удалении пользователя
 
+## Технологии
 
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS v4
+- **Backend:** Supabase (PostgreSQL + Auth + RLS)
+- **Генерация PDF:** Puppeteer + Chromium
+- **Валидация:** Zod
+
+## Настройка аутентификации
+
+Подробная инструкция в [AUTH_SETUP.md](./AUTH_SETUP.md)
+
+## Скрипты
+
+```bash
+npm run dev      # Запуск dev-сервера
+npm run build    # Сборка продакшн версии
+npm run start    # Запуск продакшн сервера
+npm run lint     # ESLint проверка
+npm run test:smoke # Smoke-тесты
+```
+
+## Развёртывание
+
+### Vercel
+
+```bash
+vercel deploy
+```
+
+Не забудьте добавить переменные окружения в настройках проекта.
+
+### Docker
+
+```bash
+docker build -t decor_crm .
+docker run -p 3000:3000 --env-file .env.local decor_crm
+```
+
+## Лицензия
+
+MIT

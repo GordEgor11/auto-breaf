@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function csvEscape(value: string | number | boolean | null) {
   if (value === null || value === undefined) return "";
@@ -10,16 +10,19 @@ function csvEscape(value: string | number | boolean | null) {
 }
 
 export async function GET() {
-  const agentId = process.env.DEFAULT_AGENT_ID;
-  if (!agentId) {
-    return new Response("DEFAULT_AGENT_ID не настроен", { status: 500 });
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Требуется авторизация", { status: 401 });
   }
 
-  const supabase = createSupabaseAdminClient();
   const { data: leads, error } = await supabase
     .from("leads")
     .select("*")
-    .eq("agent_id", agentId)
+    .eq("agent_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {

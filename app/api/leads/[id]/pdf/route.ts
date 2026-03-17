@@ -4,7 +4,7 @@ import path from "node:path";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function formatCurrency(value: number | null) {
   if (value === null || value === undefined) return "—";
@@ -92,17 +92,20 @@ export async function GET(
     return new Response("ID заявки не указан", { status: 400 });
   }
 
-  const agentId = process.env.DEFAULT_AGENT_ID;
-  if (!agentId) {
-    return new Response("DEFAULT_AGENT_ID не настроен", { status: 500 });
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Требуется авторизация", { status: 401 });
   }
 
-  const supabase = createSupabaseAdminClient();
   const { data: lead, error } = await supabase
     .from("leads")
     .select("*")
     .eq("id", leadId)
-    .eq("agent_id", agentId)
+    .eq("agent_id", user.id)
     .single();
 
   if (error || !lead) {
@@ -114,7 +117,7 @@ export async function GET(
 
     if (fallback.data) {
       return new Response(
-        `Заявка принадлежит другому агенту. lead.agent_id=${fallback.data.agent_id}, env.DEFAULT_AGENT_ID=${agentId}`,
+        `Заявка принадлежит другому агенту.`,
         { status: 403 }
       );
     }

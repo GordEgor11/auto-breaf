@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function normalizePhone(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -93,17 +93,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const agentId = process.env.DEFAULT_AGENT_ID;
-    if (!agentId) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
       return Response.json(
-        { error: "DEFAULT_AGENT_ID не настроен" },
-        { status: 500 }
+        { error: "Требуется авторизация" },
+        { status: 401 }
       );
     }
 
-    const supabase = createSupabaseAdminClient();
     const payload = {
-      agent_id: agentId,
+      agent_id: user.id,
       property_type: parsed.data.property_type,
       district: parsed.data.district || null,
       budget_min: parsed.data.budget_min,

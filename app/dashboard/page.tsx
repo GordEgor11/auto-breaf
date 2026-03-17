@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import LeadActions from "./LeadActions";
 
 export const dynamic = "force-dynamic";
@@ -36,13 +37,20 @@ async function updateStatus(formData: FormData) {
     return;
   }
 
-  const agentId = process.env.DEFAULT_AGENT_ID;
-  if (!agentId) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     return;
   }
 
-  const supabase = createSupabaseAdminClient();
-  await supabase.from("leads").update({ status }).eq("id", id).eq("agent_id", agentId);
+  await supabase
+    .from("leads")
+    .update({ status })
+    .eq("id", id)
+    .eq("agent_id", user.id);
 
   revalidatePath("/dashboard");
 }
@@ -53,25 +61,20 @@ export default async function DashboardPage({
   searchParams?: SearchParams;
 }) {
   const resolvedParams = await Promise.resolve(searchParams);
-  const agentId = process.env.DEFAULT_AGENT_ID;
-  if (!agentId) {
-    return (
-      <div className="min-h-screen bg-zinc-50 text-zinc-900">
-        <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-16">
-          <h1 className="text-3xl font-semibold">Кабинет агента</h1>
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Укажите `DEFAULT_AGENT_ID` в `.env.local`, чтобы загрузить заявки.
-          </div>
-          <a
-            className="text-sm font-semibold text-zinc-900 underline underline-offset-4"
-            href="/"
-          >
-            Назад на лендинг
-          </a>
-        </main>
-      </div>
-    );
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
   }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, company, email")
+    .eq("id", user.id)
+    .single();
 
   const page = Math.max(1, Number(resolvedParams?.page ?? "1"));
   const budgetMin = parseNumber(resolvedParams?.budget_min);
@@ -87,11 +90,10 @@ export default async function DashboardPage({
       ? Number(resolvedParams.period)
       : null;
 
-  const supabase = createSupabaseAdminClient();
   let query = supabase
     .from("leads")
     .select("*", { count: "exact" })
-    .eq("agent_id", agentId)
+    .eq("agent_id", user.id)
     .order("created_at", { ascending: false });
 
   if (status) {
@@ -124,7 +126,7 @@ export default async function DashboardPage({
   const { data: allLeads } = await supabase
     .from("leads")
     .select("status, created_at")
-    .eq("agent_id", agentId);
+    .eq("agent_id", user.id);
 
   let conversionSubmit = 0;
   let conversionSuccess = 0;
@@ -134,7 +136,7 @@ export default async function DashboardPage({
     let eventsQuery = supabase
       .from("lead_events")
       .select("event_type, created_at")
-      .eq("agent_id", agentId)
+      .eq("agent_id", user.id)
       .in("event_type", ["form_submit", "form_success"]);
 
     if (period) {
@@ -171,11 +173,30 @@ export default async function DashboardPage({
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold">Кабинет агента</h1>
-          <p className="text-sm text-zinc-600">
-            Всего заявок: {count ?? 0}. Обновите статус прямо из таблицы.
-          </p>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-semibold">Кабинет агента</h1>
+            <p className="text-sm text-zinc-600">
+              {profile?.name || profile?.email}
+            </p>
+            <p className="text-sm text-zinc-600">
+              Всего заявок: {count ?? 0}. Обновите статус прямо из таблицы.
+            </p>
+          </div>
+          <form action="/api/auth/logout" method="POST" className="flex items-center gap-2">
+            <a
+              className="inline-flex h-10 items-center justify-center rounded-full border border-zinc-300 px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-400"
+              href="/brief"
+            >
+              Форма брифа
+            </a>
+            <button
+              className="inline-flex h-10 items-center justify-center rounded-full border border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-rose-600"
+              type="submit"
+            >
+              Выйти
+            </button>
+          </form>
         </header>
 
         <section className="grid gap-4 md:grid-cols-5">
@@ -432,13 +453,6 @@ export default async function DashboardPage({
             Экспорт CSV
           </a>
         </div>
-
-        <a
-          className="text-sm font-semibold text-zinc-900 underline underline-offset-4"
-          href="/"
-        >
-          Назад на лендинг
-        </a>
       </main>
     </div>
   );

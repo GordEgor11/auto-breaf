@@ -1,11 +1,43 @@
 -- Enable required extensions
 create extension if not exists pgcrypto;
 
+-- Profiles table (linked to auth.users)
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  email text not null,
+  name text,
+  company text,
+  phone text,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists profiles_email_idx on public.profiles (email);
+
+-- Auto-create profile on user signup
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, name, updated_at)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function public.handle_new_user();
+
 -- Leads table
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
-  agent_id uuid not null,
+  agent_id uuid not null references public.profiles (id) on delete cascade,
   property_type text not null,
   district text,
   budget_min numeric,
@@ -46,9 +78,30 @@ create table if not exists public.lead_notes (
 create index if not exists lead_notes_lead_id_idx on public.lead_notes (lead_id);
 
 -- Row level security
+alter table public.profiles enable row level security;
 alter table public.leads enable row level security;
 alter table public.lead_notes enable row level security;
 alter table public.lead_events enable row level security;
+
+-- Profiles policies: users can only view/update their own profile
+create policy "profiles_select_own"
+  on public.profiles
+  for select
+  to authenticated
+  using (id = auth.uid());
+
+create policy "profiles_update_own"
+  on public.profiles
+  for update
+  to authenticated
+  using (id = auth.uid())
+  with check (id = auth.uid());
+
+create policy "profiles_insert_own"
+  on public.profiles
+  for insert
+  to authenticated
+  with check (id = auth.uid());
 
 -- Leads policies: owner-only read/update/delete
 create policy "leads_select_own"
@@ -56,6 +109,12 @@ create policy "leads_select_own"
   for select
   to authenticated
   using (agent_id = auth.uid());
+
+create policy "leads_insert_own"
+  on public.leads
+  for insert
+  to authenticated
+  with check (agent_id = auth.uid());
 
 create policy "leads_update_own"
   on public.leads
@@ -137,6 +196,13 @@ create policy "lead_events_insert_own"
   on public.lead_events
   for insert
   to authenticated
+  with check (agent_id = auth.uid());
+
+create policy "lead_events_update_own"
+  on public.lead_events
+  for update
+  to authenticated
+  using (agent_id = auth.uid())
   with check (agent_id = auth.uid());
 
 create policy "lead_events_delete_own"

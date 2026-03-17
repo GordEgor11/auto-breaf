@@ -1,10 +1,54 @@
-export default function Home() {
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-16">
         <header className="flex flex-col gap-6">
-          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Auto-brief MVP
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              Auto-brief MVP
+            </div>
+            <div className="flex gap-3">
+              {user ? (
+                <>
+                  <a
+                    className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                    href="/dashboard"
+                  >
+                    Кабинет
+                  </a>
+                  <form action="/api/auth/logout" method="POST">
+                    <button
+                      className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-rose-600"
+                      type="submit"
+                    >
+                      Выйти
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <a
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-900 transition hover:border-zinc-400"
+                    href="/login"
+                  >
+                    Войти
+                  </a>
+                  <a
+                    className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                    href="/register"
+                  >
+                    Регистрация
+                  </a>
+                </>
+              )}
+            </div>
           </div>
           <h1 className="max-w-2xl text-4xl font-semibold leading-tight">
             Сбор заявок на просмотр недвижимости и авто-формирование брифа

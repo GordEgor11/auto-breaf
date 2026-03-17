@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const eventSchema = z.object({
   event_type: z.enum(["form_view", "form_submit", "form_success"]),
@@ -16,14 +16,17 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, error: "Invalid payload" }, { status: 400 });
     }
 
-    const agentId = process.env.DEFAULT_AGENT_ID;
-    if (!agentId) {
-      return Response.json({ ok: false, error: "DEFAULT_AGENT_ID missing" }, { status: 500 });
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createSupabaseAdminClient();
     const { error } = await supabase.from("lead_events").insert({
-      agent_id: agentId,
+      agent_id: user.id,
       event_type: parsed.data.event_type,
       source: parsed.data.source ?? null,
     });
