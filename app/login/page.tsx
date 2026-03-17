@@ -18,20 +18,41 @@ export default function LoginPage() {
     setStatus("loading");
     setError(null);
 
+    console.log("Attempting sign in with:", form.email);
+
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError, data } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
       });
 
+      console.log("Sign in result:", { data, error: signInError });
+
       if (signInError) {
-        throw signInError;
+        console.error("Sign in error:", signInError.message, signInError.status);
+        setStatus("error");
+        setError(signInError.message);
+        return;
       }
 
+      if (!data.user || !data.session) {
+        console.error("No user or session returned");
+        setStatus("error");
+        setError("Ошибка входа: нет сессии");
+        return;
+      }
+
+      console.log("Sign in successful, user:", data.user.email);
+      console.log("Redirecting to dashboard...");
+      
+      // Даем время на сохранение cookies
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
+      console.error("Login error:", err);
       setStatus("error");
       setError(
         err instanceof Error
