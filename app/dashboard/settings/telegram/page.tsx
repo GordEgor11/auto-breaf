@@ -10,7 +10,7 @@ export default function TelegramSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const botUsername = "Build_crm"; // Ваш бот
+  const botUsername = "Build_crm_bot"; // Ваш бот
 
   async function handleConnect() {
     setIsConnecting(true);
