@@ -62,13 +62,43 @@ export default function TelegramSettingsPage() {
         throw new Error("Введите Chat ID");
       }
 
-      const { error: updateError } = await supabase
+      // Используем прямой REST API вызов вместо типизированного клиента
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .update({ telegram_chat_id: chatId.trim() } as any)
-        .eq("id", user.id);
+        .select("id")
+        .eq("id", user.id)
+        .single();
 
-      if (updateError) {
-        throw updateError;
+      if (profileError || !profileData) {
+        // Создаём профиль если не существует
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email || "",
+            telegram_chat_id: chatId.trim(),
+          });
+        
+        if (insertError) throw insertError;
+      } else {
+        // Обновляем через REST с явным указанием колонок
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+              "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              "Prefer": "return=minimal",
+            },
+            body: JSON.stringify({ telegram_chat_id: chatId.trim() }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Ошибка обновления профиля");
+        }
       }
 
       setIsConnected(true);
@@ -95,13 +125,23 @@ export default function TelegramSettingsPage() {
         throw new Error("Необходимо войти в систему");
       }
 
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ telegram_chat_id: null } as any)
-        .eq("id", user.id);
+      // Отключаем через REST API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({ telegram_chat_id: null }),
+        }
+      );
 
-      if (updateError) {
-        throw updateError;
+      if (!response.ok) {
+        throw new Error("Ошибка отключения Telegram");
       }
 
       setChatId("");
