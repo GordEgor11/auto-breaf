@@ -11,5 +11,8 @@
       "src": "/(.*)",
       "dest": "telegram-bot/index.js"
     }
-  ]
+  ],
+  "env": {
+    "TELEGRAM_BOT_TOKEN": "@telegram-bot-token"
+  }
 }
