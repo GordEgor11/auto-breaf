@@ -62,24 +62,46 @@ export default function TelegramSettingsPage() {
         throw new Error("Введите Chat ID");
       }
 
-      // Сначала пробуем обновить
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ telegram_chat_id: chatId.trim() } as any)
-        .eq("id", user.id);
-
-      if (updateError) {
-        // Если не удалось обновить, создаём новый профиль
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert({
+      // Используем прямой REST API вызов для обхода типов
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({ 
             id: user.id,
-            email: user.email || "",
-            telegram_chat_id: chatId.trim(),
-          } as any);
+            telegram_chat_id: chatId.trim() 
+          }),
+        }
+      );
 
-        if (insertError) {
-          throw insertError;
+      if (!response.ok && response.status !== 404) {
+        // Если PATCH не сработал, пробуем POST (создание)
+        const createResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              "Prefer": "return=minimal",
+            },
+            body: JSON.stringify({ 
+              id: user.id,
+              email: user.email || "",
+              telegram_chat_id: chatId.trim(),
+            }),
+          }
+        );
+
+        if (!createResponse.ok) {
+          throw new Error("Ошибка сохранения профиля");
         }
       }
 
