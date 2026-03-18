@@ -10,6 +10,8 @@ export type Database = {
           name: string | null;
           company: string | null;
           phone: string | null;
+          telegram_chat_id: string | null;
+          telegram_bot_token: string | null;
           created_at: string;
           updated_at: string;
         };

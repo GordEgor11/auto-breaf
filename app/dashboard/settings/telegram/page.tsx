@@ -66,7 +66,6 @@ export default function TelegramSettingsPage() {
         .from("profiles")
         .update({
           telegram_chat_id: chatId.trim(),
-          updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
 
@@ -102,7 +101,6 @@ export default function TelegramSettingsPage() {
         .from("profiles")
         .update({
           telegram_chat_id: null,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
 
