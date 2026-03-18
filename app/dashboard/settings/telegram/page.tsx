@@ -51,10 +51,18 @@ export default function TelegramSettingsPage() {
       const supabase = createSupabaseBrowserClient();
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!user || userError) {
         throw new Error("Необходимо войти в систему");
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Сессия не найдена");
       }
 
       // Проверяем Chat ID
@@ -62,46 +70,51 @@ export default function TelegramSettingsPage() {
         throw new Error("Введите Chat ID");
       }
 
-      // Используем прямой REST API вызов для обхода типов
+      // Используем PATCH с фильтром по URL - не передаём id в теле запроса
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            "Authorization": `Bearer ${accessToken}`,
             "Prefer": "return=minimal",
           },
-          body: JSON.stringify({ 
-            id: user.id,
-            telegram_chat_id: chatId.trim() 
+          body: JSON.stringify({
+            telegram_chat_id: chatId.trim()
           }),
         }
       );
 
-      if (!response.ok && response.status !== 404) {
-        // Если PATCH не сработал, пробуем POST (создание)
-        const createResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-              "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-              "Prefer": "return=minimal",
-            },
-            body: JSON.stringify({ 
-              id: user.id,
-              email: user.email || "",
-              telegram_chat_id: chatId.trim(),
-            }),
-          }
-        );
+      if (!response.ok) {
+        // Если профиль не существует, создаём его
+        if (response.status === 404) {
+          const createResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                "Authorization": `Bearer ${accessToken}`,
+                "Prefer": "return=minimal",
+              },
+              body: JSON.stringify({
+                id: user.id,
+                email: user.email || "",
+                telegram_chat_id: chatId.trim(),
+              }),
+            }
+          );
 
-        if (!createResponse.ok) {
-          throw new Error("Ошибка сохранения профиля");
+          if (!createResponse.ok) {
+            const errorData = await createResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || `Ошибка создания профиля: ${createResponse.status}`);
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Ошибка обновления профиля: ${response.status}`);
         }
       }
 
@@ -124,13 +137,21 @@ export default function TelegramSettingsPage() {
       const supabase = createSupabaseBrowserClient();
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!user || userError) {
         throw new Error("Необходимо войти в систему");
       }
 
-      // Отключаем через REST API
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Сессия не найдена");
+      }
+
+      // Отключаем через REST API с фильтром по URL
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
         {
@@ -138,7 +159,7 @@ export default function TelegramSettingsPage() {
           headers: {
             "Content-Type": "application/json",
             "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            "Authorization": `Bearer ${accessToken}`,
             "Prefer": "return=minimal",
           },
           body: JSON.stringify({ telegram_chat_id: null }),
@@ -146,7 +167,8 @@ export default function TelegramSettingsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Ошибка отключения Telegram");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Ошибка отключения Telegram");
       }
 
       setChatId("");
@@ -164,9 +186,15 @@ export default function TelegramSettingsPage() {
       const supabase = createSupabaseBrowserClient();
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user || userError) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) return;
 
       // Загружаем профиль через REST API
       const response = await fetch(
@@ -174,7 +202,7 @@ export default function TelegramSettingsPage() {
         {
           headers: {
             "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            "Authorization": `Bearer ${accessToken}`,
           },
         }
       );
