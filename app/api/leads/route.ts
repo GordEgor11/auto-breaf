@@ -129,18 +129,23 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      console.error("Database error:", error);
       return Response.json(
-        { error: "Не удалось сохранить заявку" },
+        { error: "Не удалось сохранить заявку", details: error.message },
         { status: 500 }
       );
     }
 
     // Получаем профиль агента для отправки уведомления
-    const { data: agentProfile } = await supabase
+    const { data: agentProfile, error: profileError } = await supabase
       .from("profiles")
       .select("telegram_chat_id, email")
       .eq("id", agentId)
       .single();
+
+    if (profileError) {
+      console.warn("Profile not found or telegram_chat_id column missing:", profileError.message);
+    }
 
     const summary = [
       "🔔 <b>Новая заявка</b>",
@@ -162,8 +167,13 @@ export async function POST(request: NextRequest) {
       .filter(Boolean)
       .join("\n");
 
-    // Отправляем уведомление в Telegram агенту
-    const notification = await sendTelegramNotification(summary, agentProfile?.telegram_chat_id);
+    // Отправляем уведомление в Telegram агенту (если есть chat_id)
+    let notification = { ok: false, skipped: true };
+    if (agentProfile?.telegram_chat_id) {
+      notification = await sendTelegramNotification(summary, agentProfile.telegram_chat_id);
+    } else {
+      console.log("Telegram notification skipped: no chat_id");
+    }
 
     return Response.json(
       { lead_id: data.id, telegram: notification.ok ?? false },
