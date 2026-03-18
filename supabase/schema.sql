@@ -17,6 +17,8 @@ create table if not exists public.profiles (
   name text,
   company text,
   phone text,
+  telegram_chat_id text,
+  telegram_bot_token text,
   updated_at timestamptz not null default now()
 );
 

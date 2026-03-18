@@ -12,10 +12,10 @@ function normalizePhone(value: string) {
   return `+${digits}`;
 }
 
-async function sendTelegramNotification(message: string) {
+async function sendTelegramNotification(message: string, chatId?: string) {
+  // Используем общий токен бота из env
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-
+  
   if (!token || !chatId) {
     return { ok: false, skipped: true };
   }
@@ -30,6 +30,7 @@ async function sendTelegramNotification(message: string) {
           chat_id: chatId,
           text: message,
           disable_web_page_preview: true,
+          parse_mode: "HTML",
         }),
       }
     );
@@ -134,24 +135,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Получаем профиль агента для отправки уведомления
+    const { data: agentProfile } = await supabase
+      .from("profiles")
+      .select("telegram_chat_id, email")
+      .eq("id", agentId)
+      .single();
+
     const summary = [
-      "Новая заявка",
-      `Имя: ${payload.name}`,
-      `Телефон: ${payload.phone}`,
-      payload.email ? `Email: ${payload.email}` : null,
-      `Тип: ${payload.property_type === "house" ? "Дом" : "Квартира"}`,
-      payload.district ? `Район: ${payload.district}` : null,
+      "🔔 <b>Новая заявка</b>",
+      "",
+      `<b>Имя:</b> ${payload.name}`,
+      `<b>Телефон:</b> ${payload.phone}`,
+      payload.email ? `<b>Email:</b> ${payload.email}` : null,
+      "",
+      `<b>Тип:</b> ${payload.property_type === "house" ? "🏠 Дом" : "🏢 Квартира"}`,
+      payload.district ? `<b>Район:</b> ${payload.district}` : null,
       payload.budget_min || payload.budget_max
-        ? `Бюджет: ${payload.budget_min ?? "—"} - ${payload.budget_max ?? "—"}`
+        ? `<b>Бюджет:</b> ${payload.budget_min ?? "—"} - ${payload.budget_max ?? "—"} ₽`
         : null,
-      payload.timeline ? `Сроки: ${payload.timeline}` : null,
-      `Ипотека: ${payload.mortgage ? "Да" : "Нет"}`,
+      payload.timeline ? `<b>Сроки:</b> ${payload.timeline}` : null,
+      `<b>Ипотека:</b> ${payload.mortgage ? "✅ Да" : "❌ Нет"}`,
+      "",
       `ID: ${data.id}`,
     ]
       .filter(Boolean)
       .join("\n");
 
-    const notification = await sendTelegramNotification(summary);
+    // Отправляем уведомление в Telegram агенту
+    const notification = await sendTelegramNotification(summary, agentProfile?.telegram_chat_id);
 
     return Response.json(
       { lead_id: data.id, telegram: notification.ok ?? false },
