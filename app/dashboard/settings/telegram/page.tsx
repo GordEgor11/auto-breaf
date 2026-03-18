@@ -62,20 +62,25 @@ export default function TelegramSettingsPage() {
         throw new Error("Введите Chat ID");
       }
 
-      // Пробуем обновить или создать профиль через upsert
-      const { error: upsertError } = await supabase
+      // Сначала пробуем обновить
+      const { error: updateError } = await supabase
         .from("profiles")
-        .upsert({
-          id: user.id,
-          email: user.email || "",
-          telegram_chat_id: chatId.trim(),
-        }, {
-          onConflict: "id",
-        });
+        .update({ telegram_chat_id: chatId.trim() } as any)
+        .eq("id", user.id);
 
-      if (upsertError) {
-        console.error("Upsert error:", upsertError);
-        throw new Error(upsertError.message || "Ошибка сохранения");
+      if (updateError) {
+        // Если не удалось обновить, создаём новый профиль
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email || "",
+            telegram_chat_id: chatId.trim(),
+          } as any);
+
+        if (insertError) {
+          throw insertError;
+        }
       }
 
       setIsConnected(true);
