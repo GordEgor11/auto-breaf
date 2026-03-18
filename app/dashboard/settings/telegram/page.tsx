@@ -10,7 +10,7 @@ export default function TelegramSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const botUsername = "Build_crm"; // Замените на вашего бота
+  const botUsername = "Build_crm"; // Ваш бот
 
   async function handleConnect() {
     setIsConnecting(true);
@@ -32,7 +32,7 @@ export default function TelegramSettingsPage() {
 
       // Показываем инструкцию
       setSuccess(
-        `1. Откройте бота @${botUsername}\n2. Нажмите "Start" или отправьте /start\n3. Бот отправит вам ваш Chat ID\n4. Вставьте Chat ID в поле ниже`
+        `1. Откройте бота @${botUsername}\n2. Нажмите кнопку "Запустить" (Start)\n3. Бот отправит вам ваш персональный Chat ID\n4. Скопируйте число и вставьте в поле ниже`
       );
       setIsConnecting(false);
     } catch (err) {
