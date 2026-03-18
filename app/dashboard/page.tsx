@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import LeadActions from "./LeadActions";
-import CopyLinkButton from "./CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 
