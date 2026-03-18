@@ -181,11 +181,19 @@ export default function TelegramSettingsPage() {
 
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("telegram_chat_id")
-        .eq("id", user.id)
-        .single();
+      // Загружаем профиль через REST API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
+        {
+          headers: {
+            "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
+
+      const profiles = await response.json();
+      const profile = profiles[0];
 
       if (profile?.telegram_chat_id) {
         setChatId(profile.telegram_chat_id);
