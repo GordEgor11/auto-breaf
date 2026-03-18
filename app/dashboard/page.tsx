@@ -187,7 +187,7 @@ export default async function DashboardPage({
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
               <a
-                className="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white/5 px-4 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/10 hover:scale-105"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
                 href="/dashboard/settings/telegram"
               >
                 <svg className="mr-1.5 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -196,17 +196,17 @@ export default async function DashboardPage({
                 Telegram
               </a>
               <a
-                className="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white/5 px-4 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/10 hover:scale-105"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 hover:scale-105"
                 href={`/brief/${user.id}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                Открыть бриф
+                📋 Бриф
               </a>
               <CopyLinkButton agentId={user.id} />
               <form action="/api/auth/logout" method="POST">
                 <button
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white/5 px-4 text-sm font-semibold text-zinc-300 backdrop-blur-sm transition hover:bg-white/10 hover:text-rose-400"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-400 backdrop-blur-sm transition hover:bg-red-500/20 hover:text-red-300"
                   type="submit"
                 >
                   Выйти
