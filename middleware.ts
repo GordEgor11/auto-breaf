@@ -36,25 +36,27 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Protected routes (но НЕ публичные формы брифа)
-  const protectedRoutes = ["/dashboard", "/brief"];
-  const publicBriefRoutes = ["/brief/"]; // Публичные формы брифа по ID
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  ) && !publicBriefRoutes.some((route) => pathname.startsWith(route));
+  // Public routes - no auth required
+  const publicRoutes = ["/", "/pricing", "/docs"];
+  const isPublicRoute = publicRoutes.some((route) => pathname === route);
+  
+  // Public brief forms by agent ID - no auth required
+  const isPublicBrief = pathname.startsWith("/brief/") && pathname !== "/brief";
+  
+  // Protected routes - auth required
+  const isProtectedRoute = pathname === "/dashboard" || pathname === "/brief";
+  
+  // Auth routes - redirect if logged in
+  const isAuthRoute = pathname === "/login" || pathname === "/register";
 
-  // Auth routes (redirect if already logged in)
-  const authRoutes = ["/login", "/register"];
-  const isAuthRoute = authRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
+  // Redirect to login if trying to access protected route without auth
   if (isProtectedRoute && !user) {
     const url = new URL("/login", request.url);
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
+  // Redirect to dashboard if trying to access auth routes while logged in
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
