@@ -196,7 +196,7 @@ export default async function DashboardPage({
               </a>
               <a
                 className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-105"
-                href={`/brief/${user.id}`}
+                href={user ? `/brief/${user.id}` : '/dashboard'}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -209,7 +209,7 @@ export default async function DashboardPage({
                 className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 px-4 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105"
                 type="button"
                 onClick={async () => {
-                  const url = `${window.location.origin}/brief/${user.id}`;
+                  const url = user ? `${window.location.origin}/brief/${user.id}` : window.location.origin;
                   try {
                     await navigator.clipboard.writeText(url);
                     alert('Ссылка скопирована!');
@@ -241,9 +241,11 @@ export default async function DashboardPage({
                 </button>
               </form>
             </div>
-            <p className="text-xs text-slate-400">
-              Ваша ссылка на бриф: <code className="bg-white/10 px-2 py-1 rounded text-slate-300">{typeof window !== 'undefined' ? `${window.location.origin}/brief/${user.id}` : '...'}</code>
-            </p>
+            {user && (
+              <p className="text-xs text-slate-400">
+                Ваша ссылка на бриф: <code className="bg-white/10 px-2 py-1 rounded text-slate-300">{`${window.location.origin}/brief/${user.id}`}</code>
+              </p>
+            )}
           </div>
         </header>
 
