@@ -36,11 +36,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Protected routes
+  // Protected routes (но НЕ публичные формы брифа)
   const protectedRoutes = ["/dashboard", "/brief"];
+  const publicBriefRoutes = ["/brief/"]; // Публичные формы брифа по ID
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
-  );
+  ) && !publicBriefRoutes.some((route) => pathname.startsWith(route));
 
   // Auth routes (redirect if already logged in)
   const authRoutes = ["/login", "/register"];

@@ -98,15 +98,18 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    // Если пользователь не авторизован, используем agent_id из запроса (для публичных форм)
+    const agentId = user?.id || json.agent_id;
+
+    if (!agentId) {
       return Response.json(
-        { error: "Требуется авторизация" },
+        { error: "Требуется авторизация или agent_id" },
         { status: 401 }
       );
     }
 
     const payload = {
-      agent_id: user.id,
+      agent_id: agentId,
       property_type: parsed.data.property_type,
       district: parsed.data.district || null,
       budget_min: parsed.data.budget_min,

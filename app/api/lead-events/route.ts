@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 const eventSchema = z.object({
   event_type: z.enum(["form_view", "form_submit", "form_success"]),
   source: z.string().max(120).optional(),
+  agent_id: z.string().uuid().optional(),
 });
 
 export async function POST(request: Request) {
@@ -21,12 +22,15 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    // Используем agent_id из запроса (для публичных форм) или из сессии
+    const agentId = parsed.data.agent_id || user?.id;
+
+    if (!agentId) {
       return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const { error } = await supabase.from("lead_events").insert({
-      agent_id: user.id,
+      agent_id: agentId,
       event_type: parsed.data.event_type,
       source: parsed.data.source ?? null,
     });
