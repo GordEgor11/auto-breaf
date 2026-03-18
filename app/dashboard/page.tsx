@@ -185,9 +185,9 @@ export default async function DashboardPage({
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <a
-                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
                 href="/dashboard/settings/telegram"
               >
                 <svg className="mr-1.5 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -196,23 +196,55 @@ export default async function DashboardPage({
                 Telegram
               </a>
               <a
-                className="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 hover:scale-105"
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-105"
                 href={`/brief/${user.id}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                📋 Бриф
+                <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Бриф
               </a>
-              <CopyLinkButton agentId={user.id} />
+              <button
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 px-4 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105"
+                type="button"
+                onClick={async () => {
+                  const url = `${window.location.origin}/brief/${user.id}`;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    alert('Ссылка скопирована!');
+                  } catch {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = url;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('Ссылка скопирована!');
+                  }
+                }}
+              >
+                <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                Копировать
+              </button>
               <form action="/api/auth/logout" method="POST">
                 <button
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-400 backdrop-blur-sm transition hover:bg-red-500/20 hover:text-red-300"
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-rose-600 px-4 text-sm font-semibold text-white shadow-lg shadow-red-500/25 transition hover:shadow-xl hover:shadow-red-500/40 hover:scale-105"
                   type="submit"
                 >
+                  <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                   Выйти
                 </button>
               </form>
             </div>
+            <p className="text-xs text-slate-400">
+              Ваша ссылка на бриф: <code className="bg-white/10 px-2 py-1 rounded text-slate-300">{typeof window !== 'undefined' ? `${window.location.origin}/brief/${user.id}` : '...'}</code>
+            </p>
           </div>
         </header>
 
