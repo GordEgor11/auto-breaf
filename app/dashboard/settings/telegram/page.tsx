@@ -57,71 +57,31 @@ export default function TelegramSettingsPage() {
         throw new Error("Необходимо войти в систему");
       }
 
-      // Проверяем Chat ID (должен быть числом или начинаться с @)
+      // Проверяем Chat ID
       if (!chatId.trim()) {
         throw new Error("Введите Chat ID");
       }
 
-      // Проверяем существует ли профиль
-      const existingProfile = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
-        {
-          headers: {
-            "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-        }
-      );
+      // Пробуем обновить или создать профиль через upsert
+      const { error: upsertError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          email: user.email || "",
+          telegram_chat_id: chatId.trim(),
+        }, {
+          onConflict: "id",
+        });
 
-      const profileExists = (await existingProfile.json()).length > 0;
-
-      if (!profileExists) {
-        // Создаём профиль через REST API
-        const createResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-              "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-              "Prefer": "return=minimal",
-            },
-            body: JSON.stringify({
-              id: user.id,
-              email: user.email || "",
-              telegram_chat_id: chatId.trim(),
-            }),
-          }
-        );
-
-        if (!createResponse.ok) {
-          throw new Error("Ошибка создания профиля");
-        }
-      } else {
-        // Обновляем через REST API
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-              "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-              "Prefer": "return=minimal",
-            },
-            body: JSON.stringify({ telegram_chat_id: chatId.trim() }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Ошибка обновления профиля");
-        }
+      if (upsertError) {
+        console.error("Upsert error:", upsertError);
+        throw new Error(upsertError.message || "Ошибка сохранения");
       }
 
       setIsConnected(true);
       setSuccess("Telegram успешно подключён!");
     } catch (err) {
+      console.error("Save error:", err);
       setError(err instanceof Error ? err.message : "Ошибка сохранения");
     } finally {
       setIsConnecting(false);
