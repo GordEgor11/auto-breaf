@@ -62,26 +62,44 @@ export default function TelegramSettingsPage() {
         throw new Error("Введите Chat ID");
       }
 
-      // Используем прямой REST API вызов вместо типизированного клиента
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
+      // Проверяем существует ли профиль
+      const existingProfile = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
+        {
+          headers: {
+            "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
 
-      if (profileError || !profileData) {
-        // Создаём профиль если не существует
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert({
-            id: user.id,
-            email: user.email || "",
-            telegram_chat_id: chatId.trim(),
-          });
-        
-        if (insertError) throw insertError;
+      const profileExists = (await existingProfile.json()).length > 0;
+
+      if (!profileExists) {
+        // Создаём профиль через REST API
+        const createResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+              "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              "Prefer": "return=minimal",
+            },
+            body: JSON.stringify({
+              id: user.id,
+              email: user.email || "",
+              telegram_chat_id: chatId.trim(),
+            }),
+          }
+        );
+
+        if (!createResponse.ok) {
+          throw new Error("Ошибка создания профиля");
+        }
       } else {
-        // Обновляем через REST с явным указанием колонок
+        // Обновляем через REST API
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
           {
