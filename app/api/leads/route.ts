@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       .join("\n");
 
     // Отправляем уведомление в Telegram агенту (если есть chat_id)
-    let notification = { ok: false, skipped: true };
+    let notification: { ok: boolean; skipped?: boolean } = { ok: false, skipped: true };
     if (agentProfile?.telegram_chat_id) {
       notification = await sendTelegramNotification(summary, agentProfile.telegram_chat_id);
     } else {
