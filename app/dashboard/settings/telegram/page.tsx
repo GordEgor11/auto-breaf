@@ -64,9 +64,7 @@ export default function TelegramSettingsPage() {
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({
-          telegram_chat_id: chatId.trim(),
-        })
+        .update({ telegram_chat_id: chatId.trim() } as any)
         .eq("id", user.id);
 
       if (updateError) {
@@ -99,9 +97,7 @@ export default function TelegramSettingsPage() {
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({
-          telegram_chat_id: null,
-        })
+        .update({ telegram_chat_id: null } as any)
         .eq("id", user.id);
 
       if (updateError) {
