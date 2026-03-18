@@ -1,5 +1,7 @@
 // Telegram Bot для Decor CRM
 // Отправляет пользователю его Chat ID при команде /start
+// Токен: 8546580622:AAHLH6785Cg-h8TxKbdGK17S6LA2Gjr8Qns
+// Username: @Build_crm_bot
 
 const { Telegraf } = require('telegraf');
 
@@ -26,7 +28,7 @@ bot.start((ctx) => {
 // Обработчик команды /help
 bot.help((ctx) => {
   ctx.reply(
-    `🤖 <b>Бот Decor CRM</b>\n\n` +
+    `🤖 <b>Бот Decor CRM (@Build_crm_bot)</b>\n\n` +
     `Отправьте /start чтобы получить ваш Chat ID\n\n` +
     `После получения Chat ID:\n` +
     `1. Откройте Decor CRM\n` +

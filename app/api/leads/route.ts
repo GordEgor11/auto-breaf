@@ -14,6 +14,8 @@ function normalizePhone(value: string) {
 
 async function sendTelegramNotification(message: string, chatId?: string) {
   // Используем общий токен бота из env
+  // Бот: @Build_crm_bot
+  // Токен: 8546580622:AAHLH6785Cg-h8TxKbdGK17S6LA2Gjr8Qns
   const token = process.env.TELEGRAM_BOT_TOKEN;
   
   if (!token || !chatId) {
